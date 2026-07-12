@@ -1,0 +1,43 @@
+{
+  "feature_cols": [
+    "adjusted_demand",
+    "temperature",
+    "cooling_degree",
+    "heating_degree",
+    "hour_sin",
+    "hour_cos",
+    "dayofweek_sin",
+    "dayofweek_cos",
+    "month_sin",
+    "month_cos",
+    "is_weekend",
+    "is_holiday"
+  ],
+  "target_col": "adjusted_demand",
+  "covariate_cols": [
+    "temperature",
+    "cooling_degree",
+    "heating_degree",
+    "hour_sin",
+    "hour_cos",
+    "dayofweek_sin",
+    "dayofweek_cos",
+    "month_sin",
+    "month_cos",
+    "is_weekend",
+    "is_holiday"
+  ],
+  "input_window": 168,
+  "output_horizon": 24,
+  "weather_location": {
+    "latitude": 39.9526,
+    "longitude": -75.1652,
+    "city": "Philadelphia"
+  },
+  "ensemble_weights": {
+    "lstm": 0.5,
+    "chronos2": 0.5
+  },
+  "holiday_country": "US",
+  "base_temp_celsius": 18
+}

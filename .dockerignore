@@ -1,0 +1,7 @@
+venv/
+energyfore/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+*.md

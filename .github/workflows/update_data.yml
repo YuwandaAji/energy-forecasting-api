@@ -1,0 +1,36 @@
+name: Update PJM Data Daily
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Jalan tiap hari jam 6 pagi UTC (13:00 WIB)
+  workflow_dispatch:  # Biar bisa di-trigger manual juga dari GitHub UI
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy requests holidays pyarrow
+      
+      - name: Run update script
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+        run: python3 scripts/update_data.py
+      
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/pjm_features.parquet
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Auto-update PJM data $(date +'%Y-%m-%d')"
+          git push

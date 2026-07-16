@@ -64,7 +64,6 @@ if st.button("Jalankan Prediksi", type="primary"):
                 preds = predict_ensemble(lstm_preds, chronos_preds, weights)
             
             timestamps = pd.date_range(actual_prediction_start, periods=24, freq='h')
-            st.write("Debug - isi preds:", preds)
             result_df = pd.DataFrame({
                 'Waktu': timestamps,
                 'Prediksi Demand (MW)': preds

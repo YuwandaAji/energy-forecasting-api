@@ -21,12 +21,6 @@ st.caption("Prediksi konsumsi listrik PJM 24 jam ke depan")
 with st.spinner("Loading models..."):
     models = get_models()
 
-col1, col2 = st.columns(2)
-with col1:
-    prediction_date = st.date_input("Tanggal mulai prediksi")
-with col2:
-    prediction_time = st.time_input("Jam mulai prediksi")
-
 st.subheader("Pilih mode prediksi")
 mode = st.radio("Mode", ["Evaluasi Historis (pilih tanggal manual)", "Prediksi Otomatis (24 jam berikutnya dari data terbaru)"])
 

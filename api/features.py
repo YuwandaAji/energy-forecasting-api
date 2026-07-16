@@ -68,31 +68,42 @@ def fetch_weather_forecast(start_time, end_time):
 def get_context_and_future(prediction_start, input_window=168, output_horizon=24):
     df = load_historical_data()
     
-    context_end = prediction_start
-    context_start = prediction_start - pd.Timedelta(hours=input_window)
-    future_end = prediction_start + pd.Timedelta(hours=output_horizon)
-    
     is_future = prediction_start > df.index.max()
     
-    context_df = df.loc[context_start:context_end - pd.Timedelta(hours=1)].copy()
-    
-    if len(context_df) < input_window:
-        raise ValueError(f"Data histori tidak cukup. Butuh {input_window} jam sebelum {prediction_start}, "
-                          f"hanya tersedia {len(context_df)} jam.")
-    
     if is_future:
-        weather_future = fetch_weather_forecast(prediction_start, future_end)
+        # Untuk masa depan: SELALU pakai 168 jam TERAKHIR yang tersedia sebagai context
+        context_end = df.index.max() + pd.Timedelta(hours=1)
+        context_start = context_end - pd.Timedelta(hours=input_window)
+        context_df = df.loc[context_start:context_end - pd.Timedelta(hours=1)].copy()
+        
+        actual_prediction_start = df.index.max() + pd.Timedelta(hours=1)
+        future_end = actual_prediction_start + pd.Timedelta(hours=output_horizon)
+        
+        weather_future = fetch_weather_forecast(actual_prediction_start, future_end)
         future_time_feats = generate_time_features(
-            pd.date_range(prediction_start, periods=output_horizon, freq='h')
+            pd.date_range(actual_prediction_start, periods=output_horizon, freq='h')
         )
         future_df = future_time_feats.join(weather_future, how='left')
         future_df['temperature'] = future_df['temperature'].interpolate().ffill().bfill()
         future_df['cooling_degree'] = (future_df['temperature'] - BASE_TEMP).clip(lower=0)
         future_df['heating_degree'] = (BASE_TEMP - future_df['temperature']).clip(lower=0)
         future_df.index.name = 'local_time'
+        
+        return context_df, future_df[COVARIATE_COLS], is_future, actual_prediction_start
+    
     else:
+        context_end = prediction_start
+        context_start = prediction_start - pd.Timedelta(hours=input_window)
+        future_end = prediction_start + pd.Timedelta(hours=output_horizon)
+        
+        context_df = df.loc[context_start:context_end - pd.Timedelta(hours=1)].copy()
+        
+        if len(context_df) < input_window:
+            raise ValueError(f"Data histori tidak cukup. Butuh {input_window} jam sebelum {prediction_start}, "
+                              f"hanya tersedia {len(context_df)} jam.")
+        
         future_df = df.loc[prediction_start:future_end - pd.Timedelta(hours=1)].copy()
         if len(future_df) < output_horizon:
             raise ValueError(f"Data historis untuk periode target tidak lengkap.")
-    
-    return context_df, future_df[COVARIATE_COLS], is_future
+        
+        return context_df, future_df[COVARIATE_COLS], is_future, prediction_start

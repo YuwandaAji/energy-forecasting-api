@@ -126,6 +126,7 @@ def main():
     updated_df = updated_df[~updated_df.index.duplicated(keep='last')]
     
     # Re-generate lag & rolling features untuk KESELURUHAN data (biar konsisten)
+    updated_df['adjusted_demand'] = updated_df['adjusted_demand'].interpolate(method='linear', limit=6)
     updated_df['lag_1h'] = updated_df['adjusted_demand'].shift(1)
     updated_df['lag_24h'] = updated_df['adjusted_demand'].shift(24)
     updated_df['lag_168h'] = updated_df['adjusted_demand'].shift(168)

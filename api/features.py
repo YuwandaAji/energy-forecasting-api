@@ -66,17 +66,21 @@ def fetch_weather_forecast(start_time, end_time):
 
 
 def get_context_and_future(prediction_start, input_window=168, output_horizon=24):
+    prediction_start = pd.Timestamp(prediction_start).floor('h')
     df = load_historical_data()
     
-    is_future = prediction_start > df.index.max()
+    # PENTING: gunakan titik terakhir yang punya adjusted_demand VALID (bukan NaN)
+    # sebagai acuan "akhir data historis", bukan df.index.max() mentah
+    valid_max_idx = df['adjusted_demand'].last_valid_index()
+    
+    is_future = prediction_start > valid_max_idx
     
     if is_future:
-        # Untuk masa depan: SELALU pakai 168 jam TERAKHIR yang tersedia sebagai context
-        context_end = df.index.max() + pd.Timedelta(hours=1)
+        context_end = valid_max_idx + pd.Timedelta(hours=1)
         context_start = context_end - pd.Timedelta(hours=input_window)
         context_df = df.loc[context_start:context_end - pd.Timedelta(hours=1)].copy()
         
-        actual_prediction_start = df.index.max() + pd.Timedelta(hours=1)
+        actual_prediction_start = valid_max_idx + pd.Timedelta(hours=1)
         future_end = actual_prediction_start + pd.Timedelta(hours=output_horizon)
         
         weather_future = fetch_weather_forecast(actual_prediction_start, future_end)

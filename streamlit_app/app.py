@@ -27,13 +27,32 @@ with col1:
 with col2:
     prediction_time = st.time_input("Jam mulai prediksi")
 
+st.subheader("Pilih mode prediksi")
+mode = st.radio("Mode", ["Evaluasi Historis (pilih tanggal manual)", "Prediksi Otomatis (24 jam berikutnya dari data terbaru)"])
+
+if mode == "Prediksi Otomatis (24 jam berikutnya dari data terbaru)":
+    prediction_start = None  # nanti otomatis dihitung di features.py
+    st.info("Sistem akan otomatis memprediksi 24 jam setelah data terbaru yang tersedia.")
+else:
+    col1, col2 = st.columns(2)
+    with col1:
+        prediction_date = st.date_input("Tanggal mulai prediksi")
+    with col2:
+        prediction_time = st.time_input("Jam mulai prediksi")
+    prediction_start = pd.Timestamp.combine(prediction_date, prediction_time).floor('h')
+
 model_choice = st.selectbox("Pilih model", ["lstm", "prophet", "chronos2", "ensemble"])
 
 if st.button("Jalankan Prediksi", type="primary"):
-    prediction_start = pd.Timestamp.combine(prediction_date, prediction_time).floor('h')
-    
     try:
-        with st.spinner(f"Menjalankan prediksi dengan {model_choice}... (Chronos-2 mungkin butuh waktu lebih lama)"):
+        with st.spinner(f"Menjalankan prediksi dengan {model_choice}..."):
+            if mode == "Prediksi Otomatis (24 jam berikutnya dari data terbaru)":
+                # paksa pakai titik waktu yang jelas-jelas di masa depan
+                from features import load_historical_data
+                df_check = load_historical_data()
+                valid_max = df_check['adjusted_demand'].last_valid_index()
+                prediction_start = valid_max + pd.Timedelta(hours=1)
+            
             context_df, future_df, is_future, actual_prediction_start = get_context_and_future(
                 prediction_start, input_window=168, output_horizon=24
             )
